@@ -13,7 +13,7 @@ def getsource(code):
     except Exception:
         return code.__name__
 
-def pipeline(*steps, n_jobs=None, pfilter=None, return_as="generator"):
+def pipeline(*steps, n_jobs=None, return_as="generator"):
     if n_jobs is None:
         def pipe(inputs):
             outputs = inputs
@@ -32,7 +32,7 @@ def pipeline(*steps, n_jobs=None, pfilter=None, return_as="generator"):
     else:
         def pipe(inputs):
             jobs = (joblib.delayed(pipeline(*steps, return_as="list"))([_input]) for _input in inputs)
-            return (x[0] for x in joblib.Parallel(n_jobs=n_jobs, return_as="generator")(jobs) if len(x) > 0)
+            return (results[0] for results in joblib.Parallel(n_jobs=n_jobs, return_as="generator")(jobs) if len(results) > 0)
 
     pipe.__pipeline__ = {
         "type": "pipeline",
