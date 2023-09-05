@@ -16,19 +16,23 @@ def getsource(code):
 def pipeline(*steps, n_jobs=None, pfilter=None, return_as="generator"):
     if n_jobs is None:
         def pipe(inputs):
-            output = None
+            outputs = inputs
             for step in steps:
-                if return_as == "generator":
-                    inputs = (step(input) for input in inputs)
-                else: # joblib doesn't like generators
-                    inputs = [step(input) for input in inputs]
-                        
-            return inputs
+                if hasattr(step, "_is_a_filter"):
+                    outputs = filter(step, outputs)
+                else:
+                    outputs = (lambda step=step: (step(_input) for _input in outputs))()
+
+            if return_as == "list":
+                outputs = list(outputs)
+
+            return outputs
+
         return pipe
     else:
         def pipe(inputs):
             jobs = (joblib.delayed(pipeline(*steps, return_as="list"))([_input]) for _input in inputs)
-            return (x[0] for x in joblib.Parallel(n_jobs=n_jobs, return_as="generator")(jobs))
+            return (x[0] for x in joblib.Parallel(n_jobs=n_jobs, return_as="generator")(jobs) if len(x) > 0)
 
     pipe.__pipeline__ = {
         "type": "pipeline",
@@ -41,6 +45,16 @@ def pipeline(*steps, n_jobs=None, pfilter=None, return_as="generator"):
         "n_jobs": n_jobs
     }
     return pipe
+
+## Step functions:
+
+def is_a_filter(function):
+    function._is_a_filter = True
+    return function
+
+@is_a_filter
+def is_not_null(v):
+    return v is not None
 
 ## Input wrappers:
 
