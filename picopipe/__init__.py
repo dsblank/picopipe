@@ -7,25 +7,28 @@ import typing
 import random
 import inspect
 
-def pipeline(*steps, n_jobs=1):
-    if n_jobs == 1:
-        def pipe(input):
+def getsource(code):
+    try:
+        return inspect.getsource(code)
+    except Exception:
+        return code.__name__
+
+def pipeline(*steps, n_jobs=None, pfilter=None, return_as="generator"):
+    if n_jobs is None:
+        def pipe(inputs):
             output = None
             for step in steps:
-                if isinstance(input, (typing.Generator, typing.Iterator)):
-                    output = map(step, input)
-                else:
-                    output = step(input)
-                input = output
-            return output
+                if return_as == "generator":
+                    inputs = (step(input) for input in inputs)
+                else: # joblib doesn't like generators
+                    inputs = [step(input) for input in inputs]
+                        
+            return inputs
+        return pipe
     else:
-        def pipe(input):
-            if isinstance(input, (typing.Generator, typing.Iterator)):
-                inputs = map(steps[0], input)
-            else:
-                inputs = steps[0](input)
-            jobs = (joblib.delayed(pipeline(*steps[1:]))(_input) for _input in inputs)
-            return joblib.Parallel(n_jobs=n_jobs, return_as="generator")(jobs)
+        def pipe(inputs):
+            jobs = (joblib.delayed(pipeline(*steps, return_as="list"))([_input]) for _input in inputs)
+            return (x[0] for x in joblib.Parallel(n_jobs=n_jobs, return_as="generator")(jobs))
 
     pipe.__pipeline__ = {
         "type": "pipeline",
@@ -33,47 +36,26 @@ def pipeline(*steps, n_jobs=1):
                   else {
                           "type": "function",
                           "name": step.__name__,
-                          "code": inspect.getsource(step)
+                          "code": getsource(step)
                   } for step in steps],
         "n_jobs": n_jobs
     }
     return pipe
 
-## Step wrappers
+## Input wrappers:
 
-def limit(step, n_limit):
+def limit(inputs, n_limit):
     """
     """
-    def limit(inputs):
-        for count, value in enumerate(step(inputs)):
-            yield value
-            if count + 1 >= n_limit:
-                return
-    return limit
+    for count, value in enumerate(inputs):
+        yield value
+        if count + 1 == n_limit:
+            return
 
-def filter(step, function):
+def sample(inputs, percent):
     """
-    A step wrapper that filters the data.
-
-    Args:
-        step: a function
-    """
-    def filter(inputs):
-        for value in step(inputs):
-            if function(value):
-                yield value
-    return filter
-
-
-def sample(step, percent):
-    """
-    A step wrapper that selects about percent of items.
-
-    Args:
-        step: a function
-        percent: a number between 0 and 1
     """
     return filter(
-        step1, 
-        lambda value: random.random() < percent
+        lambda value: random.random() < percent,
+        inputs, 
     )
