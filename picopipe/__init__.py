@@ -3,7 +3,6 @@
 ## Apache License 2.0 
 
 import joblib
-import typing
 import random
 import inspect
 
@@ -27,8 +26,6 @@ def pipeline(*steps, n_jobs=None, return_as="generator"):
                 outputs = list(outputs)
 
             return outputs
-
-        return pipe
     else:
         def pipe(inputs):
             jobs = (joblib.delayed(pipeline(*steps, return_as="list"))([_input]) for _input in inputs)
@@ -45,6 +42,37 @@ def pipeline(*steps, n_jobs=None, return_as="generator"):
         "n_jobs": n_jobs
     }
     return pipe
+
+## Pipeline functions:
+
+def to_mermaid(pipeline):
+    graph = to_mermaid_recursive(pipeline.__pipeline__)
+    return graph
+
+def to_mermaid_recursive(data):
+    if hasattr(pipeline, "__pipeline__"):
+        if pipeline.__pipeline__["type"] == "pipeline":
+            for step in pipeline.__pipeline__["steps"]:
+                sub_part = to_mermaid_recusive(step)
+        elif pipeline.__pipeline__["type"] == "merge":
+            for sub_pipeline in pipeline.__pipeline__["pipelines"]:
+                sub_part = to_mermaid_recusive(sub_pipeline)
+        elif pipeline.__pipeline__["type"] == "step":
+            sub_part = pipeline
+    return
+
+def merge(*pipelines):
+    def merge(inputs):
+        for pipeline in pipelines:
+            inputs = (lambda pipeline=pipeline: pipeline(inputs))()
+        return inputs
+
+    merge.__pipeline__ = {
+        "type": "merge",
+        "pipelines": [pipeline.__pipeline__ for pipeline in pipelines],
+    }
+
+    return merge
 
 ## Step functions:
 
