@@ -46,33 +46,35 @@ def pipeline(*steps, n_jobs=None, return_as="generator"):
 ## Pipeline functions:
 
 def to_mermaid(pipeline):
-    graph = to_mermaid_recursive(pipeline.__pipeline__)
+    graph = _to_mermaid_recursive(pipeline.__pipeline__)
     return graph
 
-def to_mermaid_recursive(data):
+def _to_mermaid_recursive(pipeline):
     if hasattr(pipeline, "__pipeline__"):
         if pipeline.__pipeline__["type"] == "pipeline":
             for step in pipeline.__pipeline__["steps"]:
                 sub_part = to_mermaid_recusive(step)
-        elif pipeline.__pipeline__["type"] == "merge":
+        elif pipeline.__pipeline__["type"] == "connection":
             for sub_pipeline in pipeline.__pipeline__["pipelines"]:
                 sub_part = to_mermaid_recusive(sub_pipeline)
         elif pipeline.__pipeline__["type"] == "step":
             sub_part = pipeline
+        else:
+            raise Exception(f"unknown type: {pipeline.__pipeline__['type']}")
     return
 
-def merge(*pipelines):
-    def merge(inputs):
+def connect(*pipelines):
+    def connect(inputs):
         for pipeline in pipelines:
             inputs = (lambda pipeline=pipeline: pipeline(inputs))()
         return inputs
 
-    merge.__pipeline__ = {
-        "type": "merge",
+    connect.__pipeline__ = {
+        "type": "connection",
         "pipelines": [pipeline.__pipeline__ for pipeline in pipelines],
     }
 
-    return merge
+    return connect
 
 ## Step functions:
 
