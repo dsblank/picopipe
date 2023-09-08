@@ -12,15 +12,18 @@ def getsource(code):
     except Exception:
         return code.__name__
 
+def apply(step, outputs):
+    return (step(_input) for _input in outputs)
+
 def pipeline(*steps, n_jobs=None, return_as="generator"):
-    if n_jobs is None:
+    if n_jobs in [None, 0]:
         def pipe(inputs):
             outputs = inputs
-            for step in steps:
+            for step in steps):
                 if hasattr(step, "_is_a_filter"):
                     outputs = filter(step, outputs)
                 else:
-                    outputs = (lambda step=step: (step(_input) for _input in outputs))()
+                    outputs = apply(step, outputs)
 
             if return_as == "list":
                 outputs = list(outputs)
