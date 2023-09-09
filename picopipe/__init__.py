@@ -19,7 +19,7 @@ def pipeline(*steps, n_jobs=None, return_as="generator"):
     if n_jobs in [None, 0]:
         def pipe(inputs):
             outputs = inputs
-            for step in steps):
+            for step in steps:
                 if hasattr(step, "_is_a_filter"):
                     outputs = filter(step, outputs)
                 else:
