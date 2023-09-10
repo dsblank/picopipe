@@ -20,7 +20,7 @@ def pipeline(*steps, n_jobs=None, return_as="generator"):
         def pipe(inputs):
             outputs = inputs
             for step in steps:
-                if hasattr(step, "_is_a_filter"):
+                if hasattr(step, "_pfilter"):
                     outputs = filter(step, outputs)
                 else:
                     outputs = apply(step, outputs)
@@ -81,11 +81,11 @@ def connect(*pipelines):
 
 ## Step functions:
 
-def is_a_filter(function):
-    function._is_a_filter = True
+def pfilter(function):
+    function._pfilter = True
     return function
 
-@is_a_filter
+@pfilter
 def is_not_null(v):
     return v is not None
 
@@ -98,6 +98,18 @@ def limit(inputs, n_limit):
         yield value
         if count + 1 == n_limit:
             return
+
+def batch(inputs, size):
+    """
+    """
+    _batch = []
+    for value in inputs:
+        _batch.append(value)
+        if (len(_batch) % size) == 0:
+            yield _batch.copy()
+            _batch.clear()
+    if _batch:
+        yield _batch
 
 def sample(inputs, percent):
     """
