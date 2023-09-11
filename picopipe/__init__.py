@@ -117,7 +117,7 @@ def pfilter(function):
     return function
 
 @pfilter
-def is_not_null(v):
+def is_not_none(v):
     return v is not None
 
 ## Input wrappers:
