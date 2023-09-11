@@ -69,15 +69,20 @@ def _makename(n):
     return f"node{n}"
 
 def _cleanname(name):
-    return name.replace("<", "&lt;")
+    return name.replace("<", "&lt;").replace(">", "&gt;")
+
+def _cleancode(code):
+    return code.replace('\n', '<br/>')
 
 def _to_mermaid_recursive(pipeline, step_index):
     if pipeline["type"] == "pipeline":
         steps = pipeline["steps"]
         subgraph = f"subgraph {pipeline['id']} [\"{pipeline['name']}\"]\n"
         names = []
+        codes = []
         for step in steps:
             names.append(_makename(step_index[0]))
+            codes.append(step["code"])
             subgraph += f"    {names[-1]}[\"{_cleanname(step['name'])}\"]\n"
             step_index[0] += 1
         subgraph += "end\n"
@@ -88,6 +93,9 @@ def _to_mermaid_recursive(pipeline, step_index):
             for s in range(len(names) - 1):
                 arrows += f"{names[s]} --> {names[s+1]}\n"
         subgraph += arrows
+        # Interactivity
+        for s in range(len(names)):
+            subgraph += f"click {names[s]} console.log \"{_cleancode(codes[s])}\"\n"
         return subgraph
     elif pipeline["type"] == "connection":
         subgraphs = ""
