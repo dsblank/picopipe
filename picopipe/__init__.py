@@ -5,6 +5,11 @@
 import joblib
 import random
 import inspect
+import uuid
+
+def generate_uuid():
+    """Generate a GUID"""
+    return uuid.uuid4().hex
 
 def getsource(code):
     if code.__name__ == "<lambda>":
@@ -43,6 +48,7 @@ def pipeline(*steps, name=None):
     pipe.__pipeline__ = {
         "type": "pipeline",
         "name": name if name else "pipeline",
+        "id": "pipeline_" + generate_uuid(),
         "steps": [
             step.__pipeline__ if hasattr(step, "__pipeline__")
             else {
@@ -57,21 +63,24 @@ def pipeline(*steps, name=None):
 
 def to_mermaid(pipeline):
     graph = _to_mermaid_recursive(pipeline.__pipeline__, [0])
-    return graph
+    return "flowchart\n" + graph
 
 def _makename(n):
     return f"node{n}"
 
-def _to_mermaid_recursive(pipeline, index):
+def _cleanname(name):
+    return name.replace("<", "&lt;")
+
+def _to_mermaid_recursive(pipeline, step_index):
     if pipeline["type"] == "pipeline":
         steps = pipeline["steps"]
-        subgraph = "subgraph {\n"
+        subgraph = f"subgraph {pipeline['id']} [\"{pipeline['name']}\"]\n"
         names = []
         for step in steps:
-            names.append(_makename(index[0]))
-            subgraph += f"    {names[-1]}[\"{step['name']}\"]\n"
-            index[0] += 1
-        subgraph += "}\n"
+            names.append(_makename(step_index[0]))
+            subgraph += f"    {names[-1]}[\"{_cleanname(step['name'])}\"]\n"
+            step_index[0] += 1
+        subgraph += "end\n"
         if len(steps) <= 1:
             arrows = ""
         else:
@@ -83,7 +92,9 @@ def _to_mermaid_recursive(pipeline, index):
     elif pipeline["type"] == "connection":
         subgraphs = ""
         for sub_pipeline in pipeline["pipelines"]:
-            subgraphs += _to_mermaid_recursive(sub_pipeline, index)
+            subgraphs += _to_mermaid_recursive(sub_pipeline, step_index)
+        for s in range(len(pipeline["pipelines"]) - 1):
+            subgraphs += f"{pipeline['pipelines'][s]['id']} --> {pipeline['pipelines'][s+1]['id']}\n"
         return subgraphs
     else:
         raise Exception(f"unknown type: {pipeline}")
