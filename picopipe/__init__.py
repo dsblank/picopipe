@@ -1,6 +1,6 @@
 ## picopipe
 ## (c) Douglas Blank
-## Apache License 2.0 
+## Apache License 2.0
 
 import joblib
 import random
@@ -23,7 +23,8 @@ def getsource(code):
             return code.__name__
 
 def apply(step, outputs):
-    return (step(_input) for _input in outputs)
+    return (step(input) if not isinstance(input, list) else
+            [step(i) for i in input] for input in outputs)
 
 def pipeline(*steps, name=None):
     def pipe(inputs, n_jobs=None, return_as="generator"):
