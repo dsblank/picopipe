@@ -26,18 +26,32 @@ def apply(step, outputs):
     return (step(input) if not isinstance(input, list) else
             [step(i) for i in input] for input in outputs)
 
+def apply_filter(_filter, outputs):
+    results = []
+    for input in outputs:
+        if not isinstance(input, list):
+            if _filter(input):
+                results.append(input)
+        else:
+            results.append(filter(_filter, input))
+    return results
+
+def apply_list(outputs):
+    return [input if not isinstance(input, list) else
+            list(input) for input in outputs]
+
 def pipeline(*steps, name=None):
     def pipe(inputs, n_jobs=None, return_as="generator"):
         if n_jobs in [None, 0]:
             outputs = inputs
             for step in steps:
                 if hasattr(step, "_pfilter"):
-                    outputs = filter(step, outputs)
+                    outputs = apply_filter(step, outputs)
                 else:
                     outputs = apply(step, outputs)
 
             if return_as == "list":
-                outputs = list(outputs)
+                outputs = apply_list(outputs)
 
             return outputs
         else:
@@ -73,7 +87,7 @@ def _cleanname(name):
     return name.replace("<", "&lt;").replace(">", "&gt;")
 
 def _cleancode(code):
-    return code.replace('\n', '<br/>')
+    return code.replace('\n', '<br/>').replace('"', '&quot;')
 
 def _to_mermaid_recursive(pipeline, step_index):
     if pipeline["type"] == "pipeline":
