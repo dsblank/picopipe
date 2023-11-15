@@ -1,6 +1,40 @@
 # picopipe
 A small pipeline framework built on top of functions
 
+## Installation
+
+```shell
+pip install picopipe
+```
+## Examples
+
+```python
+def add1(value):
+    return value + 1
+
+def add2(value):
+    return value + 2
+
+def add3(value):
+    return value + 3
+
+from picopipe import pipeline
+
+p = pipeline(add1, add2, add3)
+p([10, 20, 30])
+```
+
+See tests for more examples.
+
+## Visualization
+
+```python
+with open("pipeline.mmd", "w") as fp:
+    fp.write(to_mermaid(p))
+```
+
+Mermaid file (renders in github):
+
 ```mermaid
 flowchart
 subgraph pipeline_98e33e0628b546268abb2af5f74e50f1 ["pipeline"]
