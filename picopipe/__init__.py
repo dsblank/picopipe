@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## picopipe
 ## (c) Douglas Blank
 ## Apache License 2.0
