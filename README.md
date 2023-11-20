@@ -1,6 +1,9 @@
 # picopipe
 A small pipeline framework built on top of functions
 
+An article describing development and use of picopipe: 
+[Towards Data Science: The Worlds Smallest Data Pipeline Framework](https://medium.com/towards-data-science/the-worlds-smallest-data-pipeline-framework-408eaf1a4ce4)
+
 ## Installation
 
 ```shell
