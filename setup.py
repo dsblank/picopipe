@@ -32,9 +32,8 @@ setup_args = dict(
     description="A small pipeline framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=[
-    ],
-    packages=[],
+    install_requires=["joblib"],
+    packages=["picopipe"],
     python_requires=">=3.9",
     license="Apache 2.0",
     platforms="Linux, Mac OS X, Windows",
